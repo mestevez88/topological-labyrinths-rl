@@ -205,7 +205,7 @@ class GraphEnv2D(gym.Env):
 
         plt.cla()
         nx.draw(nx_graph, pos=self.pos, node_color=node_color, node_size=node_size)
-        plt.pause(0.1)
+        plt.pause(0.5)
 
     def next_state(self, action: Union[GridAction, int]) -> int:
         x, y = tuple(self.state_coords[self.state])
