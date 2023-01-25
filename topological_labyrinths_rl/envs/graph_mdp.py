@@ -1,7 +1,7 @@
 import random
 import time
 from enum import Enum
-from typing import Union
+from typing import Union, Optional
 
 import gym
 from gym import spaces
@@ -95,45 +95,26 @@ class Library3x3Labyrinths:
                 n = n + 1
             else:
                 continue
-        print('Connected subgraphs: ' + str(n))
+        print(f'Connected subgraphs: {n}')
 
         # classification by homotopy
         self.pi0 = []
-        m0 = 0
         self.pi1 = []
-        m1 = 0
         self.pi2 = []
-        m2 = 0
         self.pi3 = []
-        m3 = 0
         self.pi4 = []
-        m4 = 0
         for i in cnx:
             nst = sum(sum(self.Ap[i])) / 2
             if nst == (lx * lz) - 1:
-                m0 = m0 + 1
                 self.pi0.append(i)
             elif nst == (lx * lz):
-                m1 = m1 + 1
                 self.pi1.append(i)
             elif nst == (lx * lz) + 1:
-                m2 = m2 + 1
                 self.pi2.append(i)
             elif nst == (lx * lz) + 2:
-                m3 = m3 + 1
                 self.pi3.append(i)
             else:
-                m4 = m4 + 1
                 self.pi4.append(i)
-        m = m0 + m1 + m2 + m3 + m4
-
-        print('Generate all 3x3 mazes')
-        print('#pi_1=0 has ' + str(m0))
-        print('#pi_1=1 has ' + str(m1))
-        print('#pi_1=2 ' + str(m2))
-        print('#pi_1=3 ' + str(m3))
-        print('#pi_1=4 ' + str(m4))
-        print('total= ' + str(m))
 
         self.pi_sorted_indexes = {
             0: self.pi0,
@@ -148,12 +129,24 @@ class Library3x3Labyrinths:
         indexes = self.pi_sorted_indexes.get(pi, default)
         return self.Ap[random.choice(indexes)]
 
+    def print_summary(self):
+        print('Generate all 3x3 mazes')
+        print(f'{len(self.pi0)} mazes with pi_1=0')
+        print(f'{len(self.pi1)} mazes with pi_1=1')
+        print(f'{len(self.pi2)} mazes with pi_1=2')
+        print(f'{len(self.pi3)} mazes with pi_1=3')
+        print(f'{len(self.pi4)} mazes with pi_1=4')
+        print(f'Total: {len(self.Ap)}')
+
+
+LIBRARY_3X3_LABYRINTHS = Library3x3Labyrinths()
+
 
 class GraphEnv2D(gym.Env):
     """Custom Environment that follows gym interface"""
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, maze_scale=3, pi_1=1, enable_render=True, draw_deterministic=False):
+    def __init__(self, maze_scale=3, pi=1, enable_render=True, draw_deterministic: Optional[int] = None):
         super(GraphEnv2D, self).__init__()
         self.maze_scale = maze_scale
 
@@ -164,19 +157,17 @@ class GraphEnv2D(gym.Env):
         self.action_space = spaces.Discrete(self.n_actions)
         self.n_states = self.maze_scale * self.maze_scale
         self.observation_space = spaces.Discrete(self.n_states)
-        self.envs_library = Library3x3Labyrinths()
+        self.envs_library = LIBRARY_3X3_LABYRINTHS
         self.state_coords = np.array([[a, b] for a, b in itertools.product(range(self.maze_scale), range(self.maze_scale))])
         self.pos = {state: self.state_coords[state] for state in range(self.n_states)}
-        self.pi = pi_1
+        self.pi = pi
 
         if draw_deterministic:
-            index = self.envs_library.pi_sorted_indexes.get(self.pi, 0)[0]
+            index = self.envs_library.pi_sorted_indexes.get(self.pi, 0)[draw_deterministic]
             self.current_graph_adjacency = self.envs_library.Ap[index]
 
             self.start_state = 0
             self.goal_state = 8
-
-            print(f"Using env nr: {index}. start state: {self.start_state}, goal state: {self.goal_state}")
 
         else:
             self.current_graph_adjacency = self.envs_library.random_choice(pi=self.pi)
@@ -220,7 +211,7 @@ class GraphEnv2D(gym.Env):
         if (action is GridAction.DOWN) and (y > 0):
             x_new, y_new = x, y - 1
 
-        target_state = x_new * 3 + y_new
+        target_state = int(x_new * 3 + y_new)
 
         if self.current_graph_adjacency[self.state, target_state]:
             self.state = target_state
