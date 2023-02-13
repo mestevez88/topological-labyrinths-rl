@@ -81,7 +81,6 @@ class Library3x3Labyrinths:
                 n = n + 1
             else:
                 continue
-        print(f'Connected subgraphs: {n}')
 
         # classification by homotopy
         self.pi0 = []

@@ -42,7 +42,4 @@ for pi in range(n_pis):
                 log_path = f"results/single_env_3x3_log/{model_name}/pi_{pi}/env_{env_idx}/run_{i}"
                 new_logger = configure_logger(log_path, ["csv"])
                 model.set_logger(new_logger)
-                #eval_callback = EvalCallback(eval_env, log_path=log_path, eval_freq=20,
-                #                             deterministic=True, render=False, n_eval_episodes=5,
-                #                             warn=False, verbose=False)
-                model.learn(total_timesteps=10_000, log_interval=5)#, callback=eval_callback)
+                model.learn(total_timesteps=10_000, log_interval=5)
