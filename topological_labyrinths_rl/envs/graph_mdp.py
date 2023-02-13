@@ -7,9 +7,6 @@ from gym import spaces
 import numpy as np
 import itertools
 
-from matplotlib import pyplot as plt
-import networkx as nx
-
 
 class GridAction(Enum):
     LEFT = 0
@@ -52,26 +49,6 @@ class GraphEnv2D(gym.Env):
             self.goal_state = random.choice(states_list)
 
         self.state = self.start_state
-
-        self.enable_render = enable_render
-
-        if self.enable_render:
-            plt.ion()
-
-    def nx_draw_graph(self):
-        node_color = ['#1f78b4']*self.n_states
-        node_size = [300] * self.n_states
-
-        node_color[self.goal_state] = '#1f7554'
-
-        node_color[self.state] = '#1f3224'
-        node_size[self.state] = 500
-
-        nx_graph = nx.from_numpy_matrix(self.current_graph_adjacency)
-
-        plt.cla()
-        nx.draw(nx_graph, pos=self.pos, node_color=node_color, node_size=node_size)
-        plt.pause(0.5)
 
     def next_state(self, action: Union[GridAction, int]) -> int:
         x, y = tuple(self.state_coords[self.state])
@@ -118,8 +95,7 @@ class GraphEnv2D(gym.Env):
         return self.state
 
     def render(self, mode='human'):
-        if self.enable_render:
-            self.nx_draw_graph()
+        pass
 
     def close(self):
         pass
