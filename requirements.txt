@@ -2,7 +2,4 @@ stable-baselines3
 sb3-contrib
 matplotlib
 networkx
-scipy
-tensorboard
 tqdm
-rich

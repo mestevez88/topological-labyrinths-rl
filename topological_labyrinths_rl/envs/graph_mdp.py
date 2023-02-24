@@ -19,12 +19,10 @@ class GraphEnv2D(gym.Env):
     """Custom Environment that follows gym interface"""
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, envs_library, pi, enable_render=True, draw_deterministic: Optional[int] = None):
+    def __init__(self, a_env, maze_scale, enable_render=False):
         super(GraphEnv2D, self).__init__()
 
-        self.envs_library = envs_library
-        self.maze_scale = self.envs_library.maze_scale
-        self.pi = pi
+        self.maze_scale = maze_scale
 
         self.n_actions = 4
         self.action_space = spaces.Discrete(self.n_actions)
@@ -34,19 +32,10 @@ class GraphEnv2D(gym.Env):
         self.state_coords = np.array([[a, b] for a, b in itertools.product(range(self.maze_scale), range(self.maze_scale))])
         self.pos = {state: self.state_coords[state] for state in range(self.n_states)}
 
-        if draw_deterministic:
-            index = self.envs_library.pi_sorted_indexes.get(self.pi, 0)[draw_deterministic]
-            self.current_graph_adjacency = self.envs_library.Ap[index]
+        self.graph_adjacency = a_env
 
-            self.start_state = 0
-            self.goal_state = self.n_states - 1
-
-        else:
-            self.current_graph_adjacency = self.envs_library.random_choice(pi=self.pi)
-
-            states_list = list(range(self.n_states))
-            self.start_state = states_list.pop(random.choice(states_list))
-            self.goal_state = random.choice(states_list)
+        self.start_state = 0
+        self.goal_state = self.n_states - 1
 
         self.state = self.start_state
 
@@ -65,7 +54,7 @@ class GraphEnv2D(gym.Env):
 
         target_state = int(x_new * self.maze_scale + y_new)
 
-        if self.current_graph_adjacency[self.state, target_state]:
+        if self.graph_adjacency[self.state, target_state]:
             self.state = target_state
 
         return self.state
@@ -82,13 +71,6 @@ class GraphEnv2D(gym.Env):
 
         info = {}
         return state, reward, done, info
-
-    def reset_to_new_env(self):
-        self.current_graph_adjacency = self.envs_library.random_choice(pi=self.pi)
-        states_list = list(range(self.n_states))
-        self.start_state = states_list.pop(random.choice(states_list))
-        self.goal_state = random.choice(states_list)
-        return self.reset()
 
     def reset(self):
         self.state = self.start_state

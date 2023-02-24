@@ -8,7 +8,7 @@ class Visualizer:
     def __init__(self, graph_mdp: GraphEnv2D, node_color='#1f78b4', node_size=300):
         self.graph_mdp = graph_mdp
         self.n_states = graph_mdp.n_states
-        self.graph_adjacency = graph_mdp.current_graph_adjacency
+        self.graph_adjacency = graph_mdp.graph_adjacency
         self.node_positions = graph_mdp.pos
 
         self.node_color = node_color

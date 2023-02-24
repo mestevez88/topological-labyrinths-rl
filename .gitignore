@@ -1,5 +1,4 @@
 venv/
-results/
 __pycache__/
 *.egg-info/
 .idea/
@@ -7,3 +6,5 @@ checkpoints/
 *.zip
 
 results/
+mazes/
+logs/

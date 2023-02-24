@@ -1,18 +1,14 @@
-from datetime import datetime
+import os
+import pickle
 import random
 
-from gym.wrappers import Monitor
 from stable_baselines3.common.callbacks import EvalCallback
-from stable_baselines3.common.logger import configure as configure_logger
 from stable_baselines3.common.env_checker import check_env
-from sb3_contrib import RecurrentPPO
 from stable_baselines3 import A2C
 from stable_baselines3 import DQN
 from stable_baselines3 import PPO
 import gym
-from tqdm import tqdm
 from mpi4py import MPI
-import numpy as np
 from stable_baselines3.common.utils import set_random_seed
 
 from topological_labyrinths_rl.envs.library_3x3 import LIBRARY_3X3_LABYRINTHS
@@ -31,30 +27,25 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 if rank == 0:
+    mazes_file = os.path.join("mazes", "mazes_5x5_2F805AA2.p")
     experiment_key = f"{random.getrandbits(32):X}"
-    print(f"Starting experiments {experiment_key} for 3x3 env")
-    env_dict = {pi: [] for pi in range(n_pis)}
-    for pi in env_dict:
-        n_envs_avail = len(LIBRARY_3X3_LABYRINTHS.pi_sorted_indexes[pi])
-        for env_idx in random.sample(range(n_envs_avail), min(n_envs_avail, n_env_samples_per_pi)):
-            env_dict[pi].append(env_idx)
+    print(f"Starting experiments {experiment_key} for mazes {mazes_file} env")
+    mazes = pickle.load(open(mazes_file, "rb"))
 else:
     experiment_key = None
-    env_dict = None
+    mazes = None
 
 # broadcasts
 experiment_key = comm.bcast(experiment_key, root=0)
-env_dict = comm.bcast(env_dict, root=0)
+mazes = comm.bcast(mazes, root=0)
 
 set_random_seed(seed=rank)  # set fixed random seed for each worker
 
-for pi, envs_list in env_dict.items():
+for pi, envs_list in mazes.items():
     n_envs_avail = len(LIBRARY_3X3_LABYRINTHS.pi_sorted_indexes[pi])
-    for env_idx in envs_list:
-        env = gym.make("topological-labyrinths-2D-v0",
-                       envs_library=LIBRARY_3X3_LABYRINTHS, pi=pi, draw_deterministic=env_idx)
-        eval_env = gym.make("topological-labyrinths-2D-v0",
-                            envs_library=LIBRARY_3X3_LABYRINTHS, pi=pi, draw_deterministic=env_idx)
+    for a_env in envs_list:
+        env = gym.make("topological-labyrinths-2D-v0", a_env=a_env)
+        eval_env = gym.make("topological-labyrinths-2D-v0", a_env=a_env)
 
         # make sure train and eval envs conform to gym/stable-baselines api
         check_env(env)

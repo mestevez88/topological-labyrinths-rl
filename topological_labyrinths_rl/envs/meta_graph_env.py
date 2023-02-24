@@ -3,11 +3,12 @@ import numpy as np
 
 from graph_mdp import GraphEnv2D
 
+
 class MetaGraphEnv2D(gym.Env):
     """Custom Environment that follows gym interface"""
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, n_episodes_per_trial=10):
+    def __init__(self, mazes, n_episodes_per_trial=10):
         super(MetaGraphEnv2D, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
