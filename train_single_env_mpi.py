@@ -27,9 +27,9 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 if rank == 0:
-    mazes_file = os.path.join("mazes", "mazes_5x5_2F805AA2.p")
+    mazes_file = os.path.join("mazes", "mazes_3x3_54AB0B86.p")
     experiment_key = f"{random.getrandbits(32):X}"
-    print(f"Starting experiments {experiment_key} for mazes {mazes_file} env")
+    print(f"Starting experiments {experiment_key} with mazes {mazes_file} env")
     mazes = pickle.load(open(mazes_file, "rb"))
 else:
     experiment_key = None
@@ -41,11 +41,10 @@ mazes = comm.bcast(mazes, root=0)
 
 set_random_seed(seed=rank)  # set fixed random seed for each worker
 
-for pi, envs_list in mazes.items():
-    n_envs_avail = len(LIBRARY_3X3_LABYRINTHS.pi_sorted_indexes[pi])
-    for a_env in envs_list:
-        env = gym.make("topological-labyrinths-2D-v0", a_env=a_env)
-        eval_env = gym.make("topological-labyrinths-2D-v0", a_env=a_env)
+for pi, envs_list in mazes["mazes"].items():
+    for env_idx, a_env in enumerate(envs_list):
+        env = gym.make("topological-labyrinths-2D-v0", a_env=a_env, maze_scale=mazes["info"]["lx"])
+        eval_env = gym.make("topological-labyrinths-2D-v0", a_env=a_env, maze_scale=mazes["info"]["lx"])
 
         # make sure train and eval envs conform to gym/stable-baselines api
         check_env(env)
@@ -53,7 +52,7 @@ for pi, envs_list in mazes.items():
 
         for model_name, model_class in models.items():
             model = model_class("MlpPolicy", env)
-            print(f"Training {model_name} <pi={pi}, env_nr={env_idx + 1}/{n_envs_avail}, trial={rank}/{n_trials_per_env}>")
+            print(f"Training {model_name} <pi={pi}, env_nr={env_idx + 1}/{len(envs_list)}, trial={rank}/{n_trials_per_env}>")
             log_path = f"results/single_env_3x3_log/{experiment_key}/{model_name}/pi_{pi}/env_{env_idx}/run_{rank}"
             eval_callback = EvalCallback(eval_env, log_path=log_path, eval_freq=5, deterministic=False, render=False,
                                          n_eval_episodes=5, warn=False, verbose=False)

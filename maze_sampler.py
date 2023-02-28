@@ -93,34 +93,35 @@ def generate_random_maze_adjacency(lx: int, lz: int, pi: int = 0):
     for _ in range(pi):
         A.add(random.sample(tuple(edges - A), 1)[0])
 
-    repeat = 100000
+    if edges - A:
+        repeat = 100000
 
-    for i in range(repeat):
-        NA = edges - A
-        A1 = set()
-        RA = random.choice(list(A))
-        RNA = random.choice(list(NA))
-        for r in A:
-            A1.add(r)
-        A1.remove(RA)
-        A1.add(RNA)
-        adj_list = defaultdict(list)
-        for x, y in A1:
-            adj_list[x].append(y)
-            adj_list[y].append(x)
-        result = defaultdict(list)
-        visited = set()
-        for vertex in adj_list:
-            if vertex not in visited:
-                dfs(adj_list, visited, vertex, result, vertex)
-        logging.debug(result.values())
-        if len(result.values()) == 1 and len(visited) == lx * lz:
-            A = A1
-            logging.debug(("cnx"))
-            logging.debug((len(result.values())))
-        else:
-            logging.debug(('discnx'))
-            logging.debug((len(result.values())))
+        for i in range(repeat):
+            NA = edges - A
+            A1 = set()
+            RA = random.choice(list(A))
+            RNA = random.choice(list(NA))
+            for r in A:
+                A1.add(r)
+            A1.remove(RA)
+            A1.add(RNA)
+            adj_list = defaultdict(list)
+            for x, y in A1:
+                adj_list[x].append(y)
+                adj_list[y].append(x)
+            result = defaultdict(list)
+            visited = set()
+            for vertex in adj_list:
+                if vertex not in visited:
+                    dfs(adj_list, visited, vertex, result, vertex)
+            logging.debug(result.values())
+            if len(result.values()) == 1 and len(visited) == lx * lz:
+                A = A1
+                logging.debug(("cnx"))
+                logging.debug((len(result.values())))
+            else:
+                logging.debug(('discnx'))
+                logging.debug((len(result.values())))
 
     # Adjacency matrix
     Ap = np.zeros((lx * lz, lx * lz))

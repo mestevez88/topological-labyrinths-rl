@@ -71,11 +71,11 @@ def draw_maze_collection(maze_collection):
     for j, pi in enumerate(pis):
         for i, (ax, maze) in enumerate(zip(axs[j], maze_collection["mazes"][pi])):
             draw_maze(lx, lz, maze, ax=ax)
-            ax.set_title(f"Maze(pi={pi}, sample={i})")
+            ax.set_title(f"Maze(pi_1={pi}, sample={i})")
     plt.show()
 
 
 if __name__ == "__main__":
-    mazes = pickle.load(open(os.path.join("mazes", "mazes_5x5_392FD851.p"), "rb"))
+    mazes = pickle.load(open(os.path.join("mazes", "mazes_3x3_54AB0B86.p"), "rb"))
 
     draw_maze_collection(mazes)
