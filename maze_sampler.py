@@ -11,12 +11,24 @@ import os
 import pickle
 import random
 from collections import defaultdict
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from viz import draw_maze
+from viz import draw_maze, draw_maze_collection
+
+
+def n_edges_grid(lx, lz):
+    return (lx - 1) * lz + (lz - 1) * lx
+
+
+def max_pis(lx, lz):
+    v = lx * lz
+    e_grid = n_edges_grid(lx, lz)
+    e_spanning_tree = v - 1
+    return e_grid - e_spanning_tree
 
 
 def dfs(adj_list, visited, vertex, result, key):
@@ -27,9 +39,9 @@ def dfs(adj_list, visited, vertex, result, key):
             dfs(adj_list, visited, neighbor, result, key)
 
 
-def generate_random_maze_adjacency(lx: int, lz: int, plot_result: bool = False):
+def generate_random_maze_adjacency(lx: int, lz: int, pi: int = 0):
     nb = {}
-    # neighboors dictionary
+    # neighbors dictionary
     for i in range(lx * lz):
         if i % lx == 0:
             if np.floor(i / lx) == 0:
@@ -78,8 +90,8 @@ def generate_random_maze_adjacency(lx: int, lz: int, plot_result: bool = False):
             else:
                 continue
 
-    # add other edges to "snake"
-    # A.add(frozenset({3,nb[3][2]}))
+    for _ in range(pi):
+        A.add(random.sample(tuple(edges - A), 1)[0])
 
     repeat = 100000
 
@@ -119,22 +131,18 @@ def generate_random_maze_adjacency(lx: int, lz: int, plot_result: bool = False):
             else:
                 continue
 
-    if plot_result:
-        _, ax = plt.subplots(1, 1)
-        draw_maze(lx, lz, Ap, ax)
-        plt.show()
-
     return Ap
 
 
-def sample_random_mazes(lx: int, lz: int, nm: int, save_pickle: bool = False):
+def sample_random_mazes(lx: int, lz: int, nm: int, save_pickle: bool = False, max_pi: Optional[int] = None):
     """
     randomly generate collection of lx x lz mazes
+    @param max_pi: maximum fundamental cycle to sample from
     @param save_pickle: if True, write pickled object to disc
     @param lx: width of the maze
     @param lz: height of te maze
     @param nm: number of independently sampled mazes per pi
-    @return:
+    @return: collection of mazes
     """
     run_name = f"mazes_{lx}x{lz}_{random.getrandbits(32):X}"
 
@@ -146,12 +154,23 @@ def sample_random_mazes(lx: int, lz: int, nm: int, save_pickle: bool = False):
                         level=logging.DEBUG)
 
     os.makedirs("mazes", exist_ok=True)
-    print(f"Generating {args.n_mazes} mazes of size {args.lx}x{args.lz}")
-    logging.info(f"Generating {args.n_mazes} mazes of size {args.lx}x{args.lz}")
-    mazes = {"mazes": {0: [generate_random_maze_adjacency(lx, lz) for _ in tqdm(range(nm))]},
-             "info": {"lx": lx, "lz": lz, "n_mazes": nm}}
+
+    if max_pi:
+        pis = range(min(max_pis(lx, lz), max_pi) + 1)
+    else:
+        pis = range(max_pis(lx, lz) + 1)
+
+    print(f"Generate {args.lx}x{args.lz} mazes with pi_1={set(pis)}")
+    logging.info(f"Generate {args.lx}x{args.lz} mazes with pi_1={set(pis)}")
+
+    mazes = {"mazes": {pi: [generate_random_maze_adjacency(lx, lz, pi=pi) for _ in tqdm(range(nm))] for pi in pis},
+             "info": {"lx": lx, "lz": lz, "n_mazes": nm, "pis": pis}}
+
     if save_pickle:
-        pickle.dump(mazes, open(f"mazes/{run_name}.p", "wb"))
+        path = os.path.join("mazes", f"{run_name}.p")
+        print(f"Save at {path}")
+        logging.info(f"Save at {path}")
+        pickle.dump(mazes, open(path, "wb"))
 
     return mazes
 
@@ -167,4 +186,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    sample_random_mazes(args.lx, args.lz, args.n_mazes, save_pickle=True)
+    mazes = sample_random_mazes(args.lx, args.lz, args.n_mazes, save_pickle=True)
+
+    draw_maze_collection(mazes)

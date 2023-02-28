@@ -62,12 +62,20 @@ def draw_maze(i, j, adjacency, ax):
     return plot_state_function(np.ones([i, j]), adjacency, ax=ax)
 
 
+def draw_maze_collection(maze_collection):
+    n_mazes = maze_collection["info"]["n_mazes"]
+    lx = maze_collection["info"]["lx"]
+    lz = maze_collection["info"]["lz"]
+    pis = maze_collection["info"]["pis"]
+    _, axs = plt.subplots(len(pis), n_mazes)
+    for j, pi in enumerate(pis):
+        for i, (ax, maze) in enumerate(zip(axs[j], maze_collection["mazes"][pi])):
+            draw_maze(lx, lz, maze, ax=ax)
+            ax.set_title(f"Maze(pi={pi}, sample={i})")
+    plt.show()
+
+
 if __name__ == "__main__":
     mazes = pickle.load(open(os.path.join("mazes", "mazes_5x5_392FD851.p"), "rb"))
-    n_mazes = mazes["info"]["n_mazes"]
-    lx = mazes["info"]["lx"]
-    lz = mazes["info"]["lz"]
-    _, axs = plt.subplots(1, n_mazes)
-    for ax, maze in zip(axs, mazes["mazes"][0]):
-        draw_maze(lx, lz, maze, ax=ax)
-    plt.show()
+
+    draw_maze_collection(mazes)
