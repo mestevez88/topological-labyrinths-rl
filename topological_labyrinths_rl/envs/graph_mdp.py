@@ -19,11 +19,18 @@ class GraphEnv2D(gym.Env):
     """Custom Environment that follows gym interface"""
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, a_env, lx, lz, enable_render=False):
+    def __init__(self, a_env, lx, lz, enable_render=False, sparse_reward=True, max_reward=10):
         super(GraphEnv2D, self).__init__()
 
         self.lx = lx
         self.lz = lz
+
+        self.max_reward = max_reward
+
+        if sparse_reward:
+            self.reward_func = self.sparse_reward_func
+        else:
+            self.reward_func = self.shaped_reward_func
 
         self.n_actions = 4
         self.action_space = spaces.Discrete(self.n_actions)
@@ -66,15 +73,24 @@ class GraphEnv2D(gym.Env):
 
         return self.state
 
+    def sparse_reward_func(self, state):
+        if state == self.goal_state:
+            return self.max_reward
+        else:
+            return -1
+
+    def shaped_reward_func(self, state):
+        pass
+
     def step(self, action: int):
         state = self.next_state(GridAction(action))
 
         if state == self.goal_state:
-            reward = 1
             done = True
         else:
-            reward = -1
             done = False
+
+        reward = self.reward_func(state)
 
         info = {"state": state, "reward": reward, "done": done}
         return state, reward, done, info
