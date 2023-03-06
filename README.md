@@ -7,33 +7,43 @@ Set up python environment for this project (anaconda, venv, etc.) and install re
 ```shell
 pip install -r requirements.txt
 ```
+please let me know if requirements are missing.
 
 # Usage
 ## Running the training scripts
-For now, we can train a meta-env-agent (LSTM-Policy trained with PPO) or a single-env-agent 
-(MLP-Policy trained with A2C) using the stable-baselines3 implementations. 
+For now, we can train an agent with an MLP-Policy using the A2C, PPO and DQN algorithms.
+The implementations are provided by the stable-baselines3 library. 
 
-To run training e.g. execute
+But first, we  need to generate some mazes 
+(it also comes with a help page, so just pass the -h flag to see how to customize):
+```shell
+python maze_sampler.py
+```
+It will generate a maze dictionary file at `mazes/mazes_<lx>x<lz>_<maze_dict_key>.p`.
+You can visualize the maze dictionary by executing
 
 ```shell
-python train_single_env.py
+python viz_maze.py <path/to/mazes.p>
 ```
 
-This will train the agent and drop logs at `tmp/single_env_log` (or `tmp/meta_env_log` respectively).
-The agent's parameters will be saved as `a2c_topological_labyrinth.zip` (or `ppo_recurrent_meta_topological_labyrinth.zip` respectively).
+To run training with multiprocessing execute
+
+```shell
+mpiexec -n 5 python mpi_train.py <path/to/mazes.p>
+```
+
+This will train the agent and drop logs at `results/experiments_<experiment_key>`.
 
 ## Visualizing results
-The `eval_` scripts will render the agent on the grid environment as a black circle on a graph with blue nodes. 
-Its goal is to navigate to the green node. 
-
-![](img/graph_3x3.png)
+The `viz_` scripts will help you visualize the results.
 
 So, for example execute:
 ```shell
-python eval_single_env.py
+python viz_progress.py <path/to/experiment/results>
 ```
 
-You can also start a tensorboard session and visualize the training process:
+or
+
 ```shell
-tensorboard --log_dir temp/single_env_log
+python viz_progress.py <path/to/experiment/results>
 ```

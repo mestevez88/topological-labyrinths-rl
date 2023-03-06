@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from viz import draw_maze, draw_maze_collection
+from viz_maze import draw_maze, draw_maze_collection
 
 
 def n_edges_grid(lx, lz):
@@ -157,9 +157,9 @@ def sample_random_mazes(lx: int, lz: int, nm: int, save_pickle: bool = False, ma
     os.makedirs("mazes", exist_ok=True)
 
     if max_pi:
-        pis = range(min(max_pis(lx, lz), max_pi) + 1)
+        pis = list(range(min(max_pis(lx, lz), max_pi) + 1))
     else:
-        pis = range(max_pis(lx, lz) + 1)
+        pis = list(range(max_pis(lx, lz) + 1))
 
     print(f"Generate {args.lx}x{args.lz} mazes with pi_1={set(pis)}")
     logging.info(f"Generate {args.lx}x{args.lz} mazes with pi_1={set(pis)}")
@@ -181,8 +181,8 @@ if __name__ == "__main__":
                                                                       'given size sorted by their fundamental group',
                                      epilog='Have fun torturing your agent ;)')
 
-    parser.add_argument('-x', '--lx', help="maze width", default=5)  # option that takes a value
-    parser.add_argument('-z', '--lz', help="maze height", default=5)
+    parser.add_argument('-x', '--lx', help="maze width", default=4)  # option that takes a value
+    parser.add_argument('-z', '--lz', help="maze height", default=4)
     parser.add_argument('-n', '--n_mazes', default=10)  # on/off flag
 
     args = parser.parse_args()

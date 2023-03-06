@@ -1,3 +1,4 @@
+import argparse
 import os
 import pickle
 
@@ -5,7 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_state_function(state_function: np.ndarray, adjacency: np.ndarray, n_tiles_per_state: int = 15, ax: plt.Axes = None, cmap: str = "Reds"):
+def plot_state_function(state_function: np.ndarray, adjacency: np.ndarray, n_tiles_per_state: int = 15,
+                        ax: plt.Axes = None, cmap: str = "Reds"):
     n = n_tiles_per_state
     single_state_tiles = np.arange(n * n).reshape(n, n)
     i, j = state_function.shape
@@ -67,15 +69,50 @@ def draw_maze_collection(maze_collection):
     lx = maze_collection["info"]["lx"]
     lz = maze_collection["info"]["lz"]
     pis = maze_collection["info"]["pis"]
-    _, axs = plt.subplots(len(pis), n_mazes)
+    _, axs = plt.subplots(n_mazes, len(pis), figsize=(2*n_mazes, 2*len(pis)))
     for j, pi in enumerate(pis):
-        for i, (ax, maze) in enumerate(zip(axs[j], maze_collection["mazes"][pi])):
+        axs[0, j].set_title(f"pi_1={pi}")
+        for i, (ax, maze) in enumerate(zip(axs[:, j], maze_collection["mazes"][pi])):
             draw_maze(lx, lz, maze, ax=ax)
-            ax.set_title(f"Maze(pi_1={pi}, sample={i})")
     plt.show()
 
 
+def draw_trajectory(i, j, adjacency, trajectory, ax, n_tiles_per_state: int = 15):
+    plot_state_function(np.ones([i, j]), adjacency, ax=ax, n_tiles_per_state=n_tiles_per_state)
+    start_goal = np.zeros([i, j])
+    start_goal[0, 0] = 1
+    start_goal[-1, -1] = -1
+    plot_state_function(start_goal, adjacency, ax=ax, n_tiles_per_state=n_tiles_per_state)
+
+    episodes = np.array_split(trajectory, list(np.where(trajectory == np.max(trajectory))[0] + 1))[:50]
+
+    tile_center = n_tiles_per_state // 2
+    tiling = lambda state: [tile_center + (state % j) * n_tiles_per_state, tile_center + (state // j) * n_tiles_per_state]
+
+    colors = plt.cm.magma(np.linspace(0, 1, len(episodes)))
+    alphas = np.linspace(0, 1, len(episodes))
+    linewidths = np.linspace(7, 1, len(episodes))
+
+    max_eps_len = max([len(episode) for episode in episodes])
+    tile_offsets = np.linspace(0, tile_center // 2, max_eps_len)
+    # tile_offset = np.linspace(tile_center // 2, 0, len(episodes))
+
+    for i, episode in enumerate(episodes):
+        tile_indexes = np.array(list(map(tiling, episode))).transpose()
+        print(episode)
+
+        x = tile_indexes[0]
+        y = tile_indexes[1]
+
+        plt.plot(x, y, color=colors[i], alpha=alphas[i], linewidth=linewidths[i])
+
+
 if __name__ == "__main__":
-    mazes = pickle.load(open(os.path.join("mazes", "mazes_3x3_54AB0B86.p"), "rb"))
+    parser = argparse.ArgumentParser(prog='viz_maze.py', description='visualize maze dictionary')
+    parser.add_argument('path', help="path to maze dictionary file")
+
+    args = parser.parse_args()
+
+    mazes = pickle.load(open(args.path, "rb"))
 
     draw_maze_collection(mazes)

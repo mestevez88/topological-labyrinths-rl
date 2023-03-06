@@ -19,20 +19,18 @@ class GraphEnv2D(gym.Env):
     """Custom Environment that follows gym interface"""
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, a_env, maze_scale, enable_render=False):
+    def __init__(self, a_env, lx, lz, enable_render=False):
         super(GraphEnv2D, self).__init__()
 
-        self.maze_scale = maze_scale
+        self.lx = lx
+        self.lz = lz
 
         self.n_actions = 4
         self.action_space = spaces.Discrete(self.n_actions)
-        self.n_states = self.maze_scale * self.maze_scale
+        self.n_states = self.lx * self.lz
         self.observation_space = spaces.Discrete(self.n_states)
 
-        self.state_coords = np.array([[a, b] for a, b in itertools.product(range(self.maze_scale), range(self.maze_scale))])
-        self.pos = {state: self.state_coords[state] for state in range(self.n_states)}
-
-        self.graph_adjacency = a_env
+        self.a_env = a_env
 
         self.start_state = 0
         self.goal_state = self.n_states - 1
@@ -40,22 +38,31 @@ class GraphEnv2D(gym.Env):
         self.state = self.start_state
 
     def next_state(self, action: Union[GridAction, int]) -> int:
-        x, y = tuple(self.state_coords[self.state])
-        x_new, y_new = x, y
+        # x, y = tuple(self.state_coords[self.state])
+        # x_new, y_new = x, y
+        #
+        # if (action is GridAction.LEFT) and (x > 0):
+        #     x_new, y_new = x - 1, y
+        # if (action is GridAction.UP) and (y < (self.maze_scale - 1)):
+        #     x_new, y_new = x, y + 1
+        # if (action is GridAction.RIGHT) and (x < (self.maze_scale - 1)):
+        #     x_new, y_new = x + 1, y
+        # if (action is GridAction.DOWN) and (y > 0):
+        #     x_new, y_new = x, y - 1
+        #
+        # target_state = int(x_new * self.maze_scale + y_new)
 
-        if (action is GridAction.LEFT) and (x > 0):
-            x_new, y_new = x - 1, y
-        if (action is GridAction.UP) and (y < (self.maze_scale - 1)):
-            x_new, y_new = x, y + 1
-        if (action is GridAction.RIGHT) and (x < (self.maze_scale - 1)):
-            x_new, y_new = x + 1, y
-        if (action is GridAction.DOWN) and (y > 0):
-            x_new, y_new = x, y - 1
+        if action is GridAction.LEFT and (self.state % self.lz != 0) and self.a_env[self.state, self.state - 1]:
+            self.state = self.state - 1
 
-        target_state = int(x_new * self.maze_scale + y_new)
+        if action is GridAction.DOWN and (self.state <= (self.lx * self.lz - self.lz - 1)) and self.a_env[self.state, self.state + self.lz]:
+            self.state = self.state + self.lz
 
-        if self.graph_adjacency[self.state, target_state]:
-            self.state = target_state
+        if action is GridAction.RIGHT and (self.state % self.lz < (self.lz - 1)) and self.a_env[self.state, self.state + 1]:
+            self.state = self.state + 1
+
+        if action is GridAction.UP and (self.state >= self.lz) and self.a_env[self.state, self.state - self.lz]:
+            self.state, self.state - self.lz
 
         return self.state
 
@@ -69,7 +76,7 @@ class GraphEnv2D(gym.Env):
             reward = -1
             done = False
 
-        info = {}
+        info = {"state": state, "reward": reward, "done": done}
         return state, reward, done, info
 
     def reset(self):

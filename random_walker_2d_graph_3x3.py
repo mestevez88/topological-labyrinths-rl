@@ -1,9 +1,12 @@
+import os
+
 import gym
 
 import topological_labyrinths_rl
 
 
 if __name__ == '__main__':
+    mazes_file = os.path.join("mazes", "mazes_3x3_54AB0B86.p")
     env = gym.make("topological-labyrinths-2D-v0")
     obs = env.reset()
     print(obs)
